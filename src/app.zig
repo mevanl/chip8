@@ -1,5 +1,6 @@
 const std = @import("std");
 const SDL = @cImport(@cInclude("SDL3/SDL.h"));
+const chip8 = @import("chip8.zig");
 
 pub const AppError = error{
     SDLInitFailed,
@@ -11,7 +12,7 @@ pub const AppError = error{
 };
 
 pub const App = struct {
-    //Chip8 chip8
+    chip8: chip8.Chip8,
     main_window: ?*SDL.SDL_Window,
     main_texture: ?*SDL.SDL_Texture,
     main_renderer: ?*SDL.SDL_Renderer,
@@ -89,10 +90,6 @@ pub const App = struct {
         SDL.SDL_Quit();
     }
 
-    pub fn run() void {
-        return;
-    }
-
     pub fn update_display(self: *App, texture_buffer: ?*const anyopaque, texture_pitch: c_int) AppError!void {
         if (!SDL.SDL_UpdateTexture(self.main_texture.?, null, texture_buffer, texture_pitch)) {
             return AppError.UpdateDisplayFailed;
@@ -167,6 +164,29 @@ pub const App = struct {
             SDL.SDLK_F => return 0xE,
             SDL.SDLK_V => return 0xF,
             else => return AppError.InvalidKeyPress,
+        }
+    }
+
+    pub fn run(self: *App) void {
+
+        // calculate pitch (# of bytes in row)
+        const video_pitch: c_int = @sizeOf(@TypeOf(self.chip8.video[0])) * chip8.VIDEO_WIDTH;
+        var previous_cycle_time: i128 = std.time.nanoTimestamp(); // use i128 to match return type
+
+        var quit = false;
+
+        while (!quit) {
+            quit = self.process_keypress(self.chip8.keypad);
+
+            const current_time = std.time.nanoTimestamp();
+            const delta_ns = current_time - previous_cycle_time;
+            const delta_time: f32 = @as(f32, @floatFromInt(delta_ns)) / 1_000_000.0;
+
+            if (delta_time > self.chip8.clock_cycle) {
+                previous_cycle_time = current_time;
+                self.chip8.cycle();
+                self.update_display(self, self.chip8.video, video_pitch);
+            }
         }
     }
 };
