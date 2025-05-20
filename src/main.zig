@@ -21,10 +21,12 @@ pub fn main() void {
     // process args
     const video_scale = std.fmt.parseInt(u8, args[1], 10) catch |err| {
         stderr.print("Failed to get video scale from arguments.\nError: {any}", .{err}) catch return;
+        return;
     };
 
     const clock_cycle = std.fmt.parseInt(u8, args[2], 10) catch |err| {
         stderr.print("Failed to get clock cycle from arguments.\nError: {any}", .{err}) catch return;
+        return;
     };
 
     const rom_file = args[3];
@@ -44,8 +46,11 @@ pub fn main() void {
         chip8.VIDEO_HEIGHT,
         clock_cycle,
         rom_file,
-    );
+    ) catch |err| {
+        stderr.print("Initialization error occured: {any}", .{err}) catch return;
+        return;
+    };
     defer chip8_app.deinit();
 
-    
+    // chip8_app.run();
 }
