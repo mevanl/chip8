@@ -31,4 +31,6 @@ pub fn main() void {
         stderr.writeAll("Error: Invalid rom file format, must be .ch8 file.\n") catch return;
         return; 
     }
+
+    // start app 
 }
