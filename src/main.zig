@@ -15,4 +15,20 @@ pub fn main() void {
         stderr.writeAll("Usage: <video scale> <clock cycle> <*.ch8 file>\n") catch return;
         return;
     }
+
+    // process args 
+    const video_scale = std.fmt.parseInt(u8, args[1], 10) catch |err| {
+        stderr.print("Failed to get video scale from arguments.\nError: {any}", .{err}) catch return;
+    };
+
+    const clock_cycle = std.fmt.parseInt(u8, args[2], 10) catch |err| {
+        stderr.print("Failed to get clock cycle from arguments.\nError: {any}", .{err}) catch return;
+    };
+
+    const rom_file = args[3];
+
+    if (!std.mem.endsWith(u8, rom_file, ".ch8")) {
+        stderr.writeAll("Error: Invalid rom file format, must be .ch8 file.\n") catch return;
+        return; 
+    }
 }
