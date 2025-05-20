@@ -69,9 +69,8 @@ pub const App = struct {
             return AppError.CreateTextureFailed;
         }
 
-        // TODO: Setup chip8 and load rom
-        _ = clock_cycle;
-        _ = rom_file;
+        self.chip8.clock_cycle = clock_cycle;
+        self.chip.load_rom(rom_file);
     }
 
     pub fn deinit(self: *App) void {
