@@ -1,6 +1,15 @@
 const std = @import("std");
 const SDL = @cImport(@cInclude("SDL3/SDL.h"));
 
+pub const AppError = error{
+    SDLInitFailed,
+    CreateWindowFailed,
+    CreateRendererFailed,
+    CreateTextureFailed,
+    UpdateDisplayFailed,
+    InvalidKeyPress,
+};
+
 pub const App = struct {
     //Chip8 chip8
     main_window: ?*SDL.SDL_Window,
@@ -101,12 +110,63 @@ pub const App = struct {
             return AppError.UpdateDisplayFailed;
         }
     }
-};
 
-pub const AppError = error{
-    SDLInitFailed,
-    CreateWindowFailed,
-    CreateRendererFailed,
-    CreateTextureFailed,
-    UpdateDisplayFailed,
+    pub fn process_keypress(keys: []u8) AppError!bool {
+        var quit: bool = false;
+        var current_event: SDL.SDL_Event = undefined;
+
+        while (SDL.SDL_PollEvent(&current_event)) {
+            switch (current_event.type) {
+                SDL.SDL_EVENT_QUIT => {
+                    quit = true;
+                    break;
+                },
+
+                SDL.SDL_EVENT_KEY_DOWN => {
+                    if (current_event.key.key == SDL.SDLK_ESCAPE) {
+                        quit = true;
+                        break;
+                    }
+
+                    // ignore unmapped keys
+                    const key_result = get_keycode_value(current_event.key.key) catch break;
+                    keys[key_result] = 1;
+                    break;
+                },
+
+                SDL.SDL_EVENT_KEY_UP => {
+                    // ignore unmapped keys
+                    const key_result = get_keycode_value(current_event.key.key) catch break;
+                    keys[key_result] = 0;
+                    break;
+                },
+
+                else => continue,
+            }
+        }
+
+        return quit;
+    }
+
+    fn get_keycode_value(SDLK: c_uint) AppError!u8 {
+        switch (SDLK) {
+            SDL.SDLK_X => return 0x0,
+            SDL.SDLK_1 => return 0x1,
+            SDL.SDLK_2 => return 0x2,
+            SDL.SDLK_3 => return 0x3,
+            SDL.SDLK_Q => return 0x4,
+            SDL.SDLK_W => return 0x5,
+            SDL.SDLK_E => return 0x6,
+            SDL.SDLK_A => return 0x7,
+            SDL.SDLK_S => return 0x8,
+            SDL.SDLK_D => return 0x9,
+            SDL.SDLK_Z => return 0xA,
+            SDL.SDLK_C => return 0xB,
+            SDL.SDLK_4 => return 0xC,
+            SDL.SDLK_R => return 0xD,
+            SDL.SDLK_F => return 0xE,
+            SDL.SDLK_V => return 0xF,
+            else => return AppError.InvalidKeyPress,
+        }
+    }
 };
