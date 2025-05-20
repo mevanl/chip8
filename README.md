@@ -1,6 +1,9 @@
 # Chip-8
 > Chip-8 is an interpreted programming language written in 1977. There is no underlying hardware it relies on, it is a spec must be implemented, similar to a virtual machine. 
 
+## Get to playing
+Go to releases and click the latest release to download a standalone executable. 
+
 ## Building from source
 #### Requirements
 - Zig (version >= 0.14.0)

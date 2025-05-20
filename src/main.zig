@@ -37,9 +37,8 @@ pub fn main() void {
     }
 
     // setup app
-    const chip8_app: app.App = undefined;
+    var chip8_app: app.App = undefined;
     chip8_app.init(
-        allocator,
         chip8.VIDEO_WIDTH * video_scale,
         chip8.VIDEO_HEIGHT * video_scale,
         chip8.VIDEO_WIDTH,
