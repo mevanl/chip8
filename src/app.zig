@@ -64,15 +64,42 @@ pub const App = struct {
         _ = rom_file;
     }
 
-    pub fn deinit(self: *const App) void {
-        SDL.SDL_DestroyTexture(self.main_texture);
-        SDL.SDL_DestroyRenderer(self.main_renderer);
-        SDL.SDL_DestroyWindow(self.main_window);
+    pub fn deinit(self: *App) void {
+        if (self.main_texture) |texture| {
+            SDL.SDL_DestroyTexture(texture);
+        }
+
+        if (self.main_renderer) |renderer| {
+            SDL.SDL_DestroyRenderer(renderer);
+        }
+
+        if (self.main_window) |window| {
+            SDL.SDL_DestroyWindow(window);
+        }
+
         SDL.SDL_Quit();
     }
 
     pub fn run() void {
         return;
+    }
+
+    pub fn update_display(self: *App, texture_buffer: ?*const anyopaque, texture_pitch: c_int) AppError!void {
+        if (!SDL.SDL_UpdateTexture(self.main_texture.?, null, texture_buffer, texture_pitch)) {
+            return AppError.UpdateDisplayFailed;
+        }
+
+        if (!SDL.SDL_RenderClear(self.main_renderer.?)) {
+            return AppError.UpdateDisplayFailed;
+        }
+
+        if (!SDL.SDL_RenderTexture(self.main_renderer.?, self.main_texture.?, null, null)) {
+            return AppError.UpdateDisplayFailed;
+        }
+
+        if (!SDL.SDL_RenderPresent(self.main_renderer.?)) {
+            return AppError.UpdateDisplayFailed;
+        }
     }
 };
 
@@ -81,4 +108,5 @@ pub const AppError = error{
     CreateWindowFailed,
     CreateRendererFailed,
     CreateTextureFailed,
+    UpdateDisplayFailed,
 };
