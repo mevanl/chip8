@@ -496,36 +496,32 @@ fn OP_Cxkk(self: *Chip8) void {
 // Dxyn: Display n-byte sprite starting at (registers[x], registers[y]), set registers[F] = collision
 // n is the sprite's height, each sprite byte is of course 8 pixels wide. Wraps if needed
 fn OP_Dxyn(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
-
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
     const n: u8 = @intCast(self._opcode & 0x000F);
 
-    // Figure out if going based display boundary so can wrap
     const x_position: u8 = self._registers[x] % VIDEO_WIDTH;
     const y_position: u8 = self._registers[y] % VIDEO_HEIGHT;
 
-    // Initialize registers[F] with no collisions (0)
     self._registers[0xF] = 0;
 
-    // Place sprite onto display
-
-    // go through rows of the sprite
-    var row: u16 = 0;
+    var row: u8 = 0;
     while (row < n) : (row += 1) {
         const sprite: u8 = self._memory[self._index_register + row];
 
-        // sprites are 8 pixels wide, each col a pixel in row
         var col: u8 = 0;
         while (col < 8) : (col += 1) {
-            const pixel: u8 = sprite & (@as(u8, 0x80) >> @as(u3, @intCast(col)));
-            const location = &(self.video[(y_position + row) * VIDEO_WIDTH + (x_position + col)]);
-
-            // if location is valid
+            const pixel: u8 = sprite & (@as(u8, 0x80) >> @intCast(col));
             if (pixel != 0) {
+                const x_coord = (x_position + col) % VIDEO_WIDTH;
+                const y_coord = (y_position + row) % VIDEO_HEIGHT;
 
-                // is there a pixel there?
+                const index = @as(usize, y_coord) * VIDEO_WIDTH + x_coord;
+
+                if (index >= self.video.len) continue; // extra safety
+
+                const location = &self.video[index];
+
                 if (location.* == 0xFFFFFFFF) {
                     self._registers[0xF] = 1;
                 }
@@ -534,7 +530,6 @@ fn OP_Dxyn(self: *Chip8) void {
             }
         }
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Ex9E: Skip next instruction if registers[x] is holding key being pressed
