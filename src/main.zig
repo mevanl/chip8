@@ -19,7 +19,7 @@ pub fn main() void {
     }
 
     // process args
-    const video_scale = std.fmt.parseInt(u8, args[1], 10) catch |err| {
+    const video_scale: c_int = std.fmt.parseInt(u8, args[1], 10) catch |err| {
         stderr.print("Failed to get video scale from arguments.\nError: {any}", .{err}) catch return;
         return;
     };
@@ -37,7 +37,7 @@ pub fn main() void {
     }
 
     // setup app
-    var chip8_app: app.App = undefined;
+    var chip8_app = app.App.instance();
     chip8_app.init(
         chip8.VIDEO_WIDTH * video_scale,
         chip8.VIDEO_HEIGHT * video_scale,
@@ -51,5 +51,5 @@ pub fn main() void {
     };
     defer chip8_app.deinit();
 
-    // chip8_app.run();
+    chip8_app.run() catch return;
 }

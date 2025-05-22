@@ -9,6 +9,8 @@ pub const AppError = error{
     CreateTextureFailed,
     UpdateDisplayFailed,
     InvalidKeyPress,
+    RomLoadFailed,
+    StdErrFailed,
 };
 
 pub const App = struct {
@@ -16,6 +18,18 @@ pub const App = struct {
     main_window: ?*SDL.SDL_Window,
     main_texture: ?*SDL.SDL_Texture,
     main_renderer: ?*SDL.SDL_Renderer,
+
+    pub fn instance() App {
+        var chip: chip8.Chip8 = chip8.Chip8.create();
+        chip.init();
+
+        return App{
+            .chip8 = chip,
+            .main_window = null,
+            .main_texture = null,
+            .main_renderer = null,
+        };
+    }
 
     pub fn init(
         self: *App,
@@ -26,6 +40,7 @@ pub const App = struct {
         clock_cycle: c_int,
         rom_file: []const u8,
     ) AppError!void {
+        const stderr = std.io.getStdErr().writer();
 
         // Initialize SDL
         if (!SDL.SDL_Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_AUDIO)) {
@@ -69,8 +84,12 @@ pub const App = struct {
             return AppError.CreateTextureFailed;
         }
 
+        self.chip8.init();
         self.chip8.clock_cycle = clock_cycle;
-        self.chip.load_rom(rom_file);
+        self.chip8.load_rom(rom_file) catch |err| {
+            stderr.print("Rom failed to load!\nError: {}.\n", .{err}) catch return AppError.StdErrFailed;
+            return AppError.RomLoadFailed;
+        };
     }
 
     pub fn deinit(self: *App) void {
@@ -107,7 +126,8 @@ pub const App = struct {
         }
     }
 
-    pub fn process_keypress(keys: []u8) AppError!bool {
+    pub fn process_keypress(self: *App, keys: []u8) bool {
+        _ = self;
         var quit: bool = false;
         var current_event: SDL.SDL_Event = undefined;
 
@@ -166,25 +186,29 @@ pub const App = struct {
         }
     }
 
-    pub fn run(self: *App) void {
+    pub fn run(self: *App) AppError!void {
+        const stderr = std.io.getStdErr().writer();
 
         // calculate pitch (# of bytes in row)
         const video_pitch: c_int = @sizeOf(@TypeOf(self.chip8.video[0])) * chip8.VIDEO_WIDTH;
-        var previous_cycle_time: i128 = std.time.nanoTimestamp(); // use i128 to match return type
+        var previous_cycle_time: i128 = std.time.nanoTimestamp();
 
         var quit = false;
 
         while (!quit) {
-            quit = self.process_keypress(self.chip8.keypad);
+            quit = self.process_keypress(&self.chip8.keypad);
 
             const current_time = std.time.nanoTimestamp();
             const delta_ns = current_time - previous_cycle_time;
             const delta_time: f32 = @as(f32, @floatFromInt(delta_ns)) / 1_000_000.0;
 
-            if (delta_time > self.chip8.clock_cycle) {
+            if (delta_time > @as(f32, @floatFromInt(self.chip8.clock_cycle))) {
                 previous_cycle_time = current_time;
                 self.chip8.cycle();
-                self.update_display(self, self.chip8.video, video_pitch);
+                self.update_display(&self.chip8.video, video_pitch) catch |err| {
+                    stderr.print("Error updating display!\nError: {any}.\n", .{err}) catch return AppError.StdErrFailed;
+                    return;
+                };
             }
         }
     }
