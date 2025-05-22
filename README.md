@@ -1,5 +1,8 @@
 # Chip-8
 > Chip-8 is an interpreted programming language written in 1977. There is no underlying hardware it relies on, it is a spec must be implemented, similar to a virtual machine. 
+- Simple, Crossplatform Build Step
+- No Heap Allocations (Except for arg parse)
+- Fully implemented Chip-8 Instructions
 
 ## Get to playing
 Go to releases and click the latest release to download a standalone executable. 
@@ -9,12 +12,7 @@ Go to releases and click the latest release to download a standalone executable.
 - Zig (version >= 0.14.0)
 - [SDL3 Zig Port](https://github.com/castholm/SDL)
 
-#### Step 1: Get SDL3 Zig port 
-Execute this zig fetch where your build.zig is located to get SDL3
-```zig
-zig fetch --save git+https://github.com/castholm/SDL.git
-```
-#### Step 2: Build
+#### Step 1: Build
 ```zig
 zig build
 ```

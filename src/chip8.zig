@@ -185,11 +185,9 @@ pub const Chip8 = struct {
     }
 
     pub fn cycle(self: *Chip8) void {
-        _ = stderr.print("CYCLE: Fetching opcode at PC = {X:0>4}\n", .{self._program_counter}) catch {};
         self._opcode =
             (@as(u16, self._memory[self._program_counter]) << 8) |
             @as(u16, self._memory[self._program_counter + 1]);
-        _ = stderr.print("CLCYE: Feteched opcode: {X:0>4}\n", .{self._opcode}) catch {};
 
         self._program_counter += 2;
 
@@ -208,27 +206,19 @@ pub const Chip8 = struct {
 };
 
 // INSTRUCTIONS FOR CHIP 8 BELOW ONLY //
-const stderr = std.io.getStdErr().writer();
 
 fn OP_NULL(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
-    // _ = self;
+    _ = self;
 }
 
 // 00E0: Clears the display
 fn OP_00E0(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
-    _ = stderr.write("00E0\n") catch return;
-
     @memset(self.video[0..], 0);
     // @memset(&self.video, 0);
-    _ = stderr.write("00E0\n") catch return;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 00EE: return from subroutine
 fn OP_00EE(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     if (self._stack_pointer == 0) {
         @panic("Stack underflow in 00EE");
     }
@@ -236,25 +226,20 @@ fn OP_00EE(self: *Chip8) void {
     self._stack_pointer -= 1;
     const ret_addr = self._stack[self._stack_pointer];
 
-    _ = stderr.print("RET to {X:0>4} (from SP={})\n", .{ ret_addr, self._stack_pointer }) catch {};
-
     self._program_counter = ret_addr;
 }
 
 // 1nnn: jump to address {nnn}
 fn OP_1nnn(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 
     // nnn is address to jump to
     // mask off the 1, get nnn
     const address: u16 = self._opcode & 0x0FFF;
     self._program_counter = address;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 2nnn: call subroutine at {nnn}
 fn OP_2nnn(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const address = self._opcode & 0x0FFF;
 
     if (self._stack_pointer >= self._stack.len) {
@@ -265,14 +250,11 @@ fn OP_2nnn(self: *Chip8) void {
     self._stack[self._stack_pointer] = ret_addr;
     self._stack_pointer += 1;
 
-    _ = stderr.print("CALL {X:0>4} from {X:0>4} (SP={})\n", .{ address, ret_addr, self._stack_pointer - 1 }) catch {};
-
     self._program_counter = address;
 }
 
 // 3xkk: skip next instruction if registers[x] == kk
 fn OP_3xkk(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 
     // the 'x' in the opcode is the register we need,
     // kk is the value we will set in that register
@@ -282,96 +264,78 @@ fn OP_3xkk(self: *Chip8) void {
     if (self._registers[x] == kk) {
         self._program_counter += 2;
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 4xkk: skip next instruction if registers[x] != kk
 fn OP_4xkk(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const kk: u8 = @intCast(self._opcode & 0x00FF);
 
     if (self._registers[x] != kk) {
         self._program_counter += 2;
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 5xy0: skip next instruction if registers[x] == registers[y]
 fn OP_5xy0(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
 
     if (self._registers[x] == self._registers[y]) {
         self._program_counter += 2;
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 6xkk: set register[x] = kk
 fn OP_6xkk(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const kk: u8 = @intCast(self._opcode & 0x00FF);
 
     self._registers[x] = kk;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 7xkk: add kk to register[x]
 fn OP_7xkk(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const kk: u8 = @intCast(self._opcode & 0x00FF);
 
     self._registers[x] = self._registers[x] +% kk;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 8xy0: set registers[x] = registers[y]
 fn OP_8xy0(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
 
     self._registers[x] = self._registers[y];
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 8xy1: set registers[x] = registers[x] OR registers[y]
 fn OP_8xy1(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
 
     self._registers[x] |= self._registers[y];
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 8xy2: set registers[x] = registers[x] AND registers[y]
 fn OP_8xy2(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
 
     self._registers[x] &= self._registers[y];
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 8xy3: set registers[x] = registers[x] XOR registers[y]
 fn OP_8xy3(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
 
     self._registers[x] ^= self._registers[y];
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 8xy4: set registers[x] = registers[x] + registers[y], register[F] = carry
 fn OP_8xy4(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
 
@@ -386,13 +350,10 @@ fn OP_8xy4(self: *Chip8) void {
 
     // sum is 16-bits, we can only store 8, mask out left 8-bits
     self._registers[x] = @intCast(sum & 0xFF);
-
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 8xy5: set register[x] = registers[x] - registers[y], registers[F] = NOT borrow
 fn OP_8xy5(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
 
@@ -406,12 +367,10 @@ fn OP_8xy5(self: *Chip8) void {
     }
 
     self._registers[x] = self._registers[x] -% self._registers[y];
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 8xy6: Shift registers[x] right by 1 (LSB into registers[F])
 fn OP_8xy6(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
 
     // Save LSB into registers[F]
@@ -419,12 +378,10 @@ fn OP_8xy6(self: *Chip8) void {
 
     // Right shift (divide by 2) once
     self._registers[x] >>= 1;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 8xy7: set registers[x] = registers[y] - registers[x], registers[F] = NOT borrow
 fn OP_8xy7(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
 
@@ -438,12 +395,10 @@ fn OP_8xy7(self: *Chip8) void {
     }
 
     self._registers[x] = self._registers[y] -% self._registers[x];
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 8xyE: Shift registers[x] left by 1 (MSB into registers[F])
 fn OP_8xyE(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
 
     // Save MSB into registers[F]
@@ -451,46 +406,37 @@ fn OP_8xyE(self: *Chip8) void {
 
     // Left shift (multiple by 2) once
     self._registers[x] <<= 1;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // 9xy0: skip next instruction if registers[x] != registers[y]
 fn OP_9xy0(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const y: u8 = @intCast((self._opcode & 0x00F0) >> 4);
 
     if (self._registers[x] != self._registers[y]) {
         self._program_counter += 2;
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Annn: Set index_register to nnn
 fn OP_Annn(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const address: u16 = self._opcode & 0x0FFF;
     self._index_register = address;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Bnnn: jump/branch to registers[0] + nnn
 fn OP_Bnnn(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const address: u16 = self._opcode & 0x0FFF;
     self._program_counter = self._registers[0] + address;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Cxkk: Set registers[x] = random_byte AND kk
 fn OP_Cxkk(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const kk: u8 = @intCast(self._opcode & 0x00FF);
 
     // TODO: make it random per call not just in init?
     self._registers[x] = self._random_byte & kk;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Dxyn: Display n-byte sprite starting at (registers[x], registers[y]), set registers[F] = collision
@@ -534,39 +480,32 @@ fn OP_Dxyn(self: *Chip8) void {
 
 // Ex9E: Skip next instruction if registers[x] is holding key being pressed
 fn OP_Ex9E(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const key: u8 = self._registers[x];
 
     if (self.keypad[key] != 0) {
         self._program_counter += 2;
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // ExA1: Skip next instruction if registers[x] is not holding key being pressed
 fn OP_ExA1(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const key: u8 = self._registers[x];
 
     if (self.keypad[key] == 0) {
         self._program_counter += 2;
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Fx07: Set registers[x] to the delay timer value
 fn OP_Fx07(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     self._registers[x] = self._delay_timer;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Fx0A: Wait for keypress, then set keypress into registers[x]
 fn OP_Fx0A(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
 
     // Wait for keypress by decrementing pc continually until
@@ -606,49 +545,39 @@ fn OP_Fx0A(self: *Chip8) void {
     } else {
         self._program_counter -= 2;
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Fx15: Set delay timer = registers[x]
 fn OP_Fx15(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     self._delay_timer = self._registers[x];
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Fx18: Set sound timer = registers[x]
 fn OP_Fx18(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     self._sound_timer = self._registers[x];
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Fx1E: Set Index register = index register + registers[x]
 fn OP_Fx1E(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     self._index_register += self._registers[x];
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Fx29: Set index register location to digit sprite at registers[x]
 fn OP_Fx29(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const digit_sprite: u8 = self._registers[x];
 
     // Font characters are 5 bytes, we need the offset to get
     // the correct first byte
     self._index_register = FONTSET_START_ADDRESS + (5 * digit_sprite);
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Fx33: Store BCD (binary coded decimal) representation of registers[x] at index regiser location,
 // memory[index_register] will be hundreds place, memory[index_register]+1 is tens, +2 is ones
 fn OP_Fx33(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     // Isolate the x part of opcode
     // we only want the number itself, shift right 8 bits
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
@@ -664,29 +593,24 @@ fn OP_Fx33(self: *Chip8) void {
 
     // Store hundres place digit at index_register
     self._memory[self._index_register] = x_value % 10;
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Fx55: Store registers 0 - registers[x] in memory at index register location
 fn OP_Fx55(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
 
     var i: u8 = 0;
     while (i <= x) : (i += 1) {
         self._memory[self._index_register + i] = self._registers[i];
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
 
 // Fx65: load registers 0 - registers[x] from memory at index register location
 fn OP_Fx65(self: *Chip8) void {
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
 
     var i: u8 = 0;
     while (i <= x) : (i += 1) {
         self._registers[i] = self._memory[self._index_register + i];
     }
-    _ = stderr.print("Opcode: {X:0>4}\n", .{self._opcode}) catch {};
 }
