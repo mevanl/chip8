@@ -1,8 +1,14 @@
-# Chip-8
-> Chip-8 is an interpreted programming language written in 1977. There is no underlying hardware it relies on, it is a spec must be implemented, similar to a virtual machine. 
+# Chip8
+
+<p align="center"><br><img src="https://raw.githubusercontent.com/mevanl/chip8/refs/heads/master/chip8.png" height="192"><br><br></b>• Chip 8 - 1977 Assembly Language •<br></p>
+
+> Chip-8 is an interpreted programming language written in 1977. There is no underlying hardware it relies on, it is a spec must be implemented, similar to a virtual machine.
+
+## Features 
 - Simple, Crossplatform Build Step
 - No Heap Allocations (Except for arg parse)
-- Fully implemented Chip-8 Instructions
+- Fully implemented Chip-8 Instruction set
+- Easily modifiable video scale and clock speed
 
 ## Building from source
 #### Requirements
