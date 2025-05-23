@@ -52,4 +52,4 @@ pub fn main() void {
     defer chip8_app.deinit();
 
     chip8_app.run() catch return;
-}
+}   

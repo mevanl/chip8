@@ -84,6 +84,8 @@ pub const App = struct {
             return AppError.CreateTextureFailed;
         }
 
+        _ = SDL.SDL_SetTextureScaleMode(self.main_texture, 0);
+
         self.chip8.init();
         self.chip8.clock_cycle = clock_cycle;
         self.chip8.load_rom(rom_file) catch |err| {

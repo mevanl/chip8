@@ -435,7 +435,7 @@ fn OP_Cxkk(self: *Chip8) void {
     const x: u8 = @intCast((self._opcode & 0x0F00) >> 8);
     const kk: u8 = @intCast(self._opcode & 0x00FF);
 
-    // TODO: make it random per call not just in init?
+    self._random_byte = self._random_generator.random().int(u8);
     self._registers[x] = self._random_byte & kk;
 }
 
