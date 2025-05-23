@@ -4,9 +4,6 @@
 - No Heap Allocations (Except for arg parse)
 - Fully implemented Chip-8 Instructions
 
-## Get to playing
-Go to releases and click the latest release to download a standalone executable. 
-
 ## Building from source
 #### Requirements
 - Zig (version >= 0.14.0)
